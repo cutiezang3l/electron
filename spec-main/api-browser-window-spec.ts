@@ -952,6 +952,17 @@ describe('BrowserWindow module', () => {
         await resize;
         expectBoundsEqual(w.getSize(), size);
       });
+
+      it('doesn\'t change bounds when maximum size is set', () => {
+        w.setMenu(null);
+        w.setMaximumSize(400, 400);
+        // Without https://github.com/electron/electron/pull/29101
+        // following call would shrink the window to 384x361.
+        // There would be also DCHECK in resize_utils.cc on
+        // debug build.
+        w.setAspectRatio(1.0);
+        expectBoundsEqual(w.getSize(), [400, 400]);
+      });
     });
 
     describe('BrowserWindow.setPosition(x, y)', () => {
@@ -4576,9 +4587,9 @@ describe('BrowserWindow module', () => {
       w1.loadURL('about:blank');
       const w2 = new BrowserWindow({ x: 300, y: 300, width: 300, height: 200 });
       w2.loadURL('about:blank');
+      const w1Focused = emittedOnce(w1, 'focus');
       w1.webContents.focus();
-      // Give focus some time to switch to w1
-      await delay();
+      await w1Focused;
       expect(w1.webContents.isFocused()).to.be.true('focuses window');
     });
   });
